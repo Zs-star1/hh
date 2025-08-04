@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة تعلم الحروف - الصف الأول</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
+        
+        * {
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        .letter-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .letter-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .letter-card.correct {
+            animation: correctAnswer 0.6s ease;
+            background: linear-gradient(135deg, #10b981, #34d399);
+        }
+        
+        .letter-card.wrong {
+            animation: wrongAnswer 0.6s ease;
+            background: linear-gradient(135deg, #ef4444, #f87171);
+        }
+        
+        @keyframes correctAnswer {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes wrongAnswer {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+            100% { transform: translateX(0); }
+        }
+        
+        .star {
+            animation: twinkle 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            from { opacity: 0.5; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .celebration {
+            animation: celebrate 2s ease-in-out;
+        }
+        
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(5deg); }
+            75% { transform: scale(1.1) rotate(-5deg); }
+        }
+        
+        .bg-pattern {
+            background-color: #f0f9ff;
+            background-image: radial-gradient(#3b82f6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .game-button {
+            transition: all 0.2s ease;
+        }
+        
+        .game-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-pattern min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <header class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <div class="bg-blue-500 text-white p-4 rounded-full mr-4">
+                        <i class="fas fa-graduation-cap text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-blue-900">🎮 لعبة تعلم الحروف</h1>
+                        <p class="text-gray-600">للصف الأول الابتدائي</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-yellow-100 px-4 py-2 rounded-full">
+                        <span class="text-yellow-800 font-bold">النقاط: <span id="score">0</span></span>
+                    </div>
+                    <div class="bg-green-100 px-4 py-2 rounded-full">
+                        <span class="text-green-800 font-bold">المستوى: <span id="level">1</span></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Game Area -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <!-- Question Section -->
+            <div class="text-center mb-8">
+                <div class="bg-gradient-to-r from-purple-400 to-pink-400 text-white p-6 rounded-2xl mb-6">
+                    <h2 class="text-2xl font-bold mb-2">اختر الحرف الصحيح:</h2>
+                    <div class="text-6xl font-bold mb-2" id="targetLetter">أ</div>
+                    <p class="text-lg" id="letterName">أَلِف</p>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="bg-gray-200 rounded-full h-4 mb-4">
+                    <div class="bg-blue-500 h-4 rounded-full transition-all duration-500" id="progressBar" style="width: 0%"></div>
+                </div>
+                <p class="text-gray-600">السؤال <span id="currentQuestion">1</span> من <span id="totalQuestions">10</span></p>
+            </div>
+
+            <!-- Answer Options -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="optionsContainer">
+                <!-- Options will be generated by JavaScript -->
+            </div>
+
+            <!-- Feedback Section -->
+            <div class="text-center" id="feedbackSection" style="display: none;">
+                <div class="text-6xl mb-4" id="feedbackEmoji">🎉</div>
+                <h3 class="text-2xl font-bold mb-2" id="feedbackText">أحسنت!</h3>
+                <p class="text-gray-600 mb-4" id="feedbackMessage">إجابة صحيحة!</p>
+                <button class="game-button bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full font-bold text-lg" onclick="nextQuestion()">
+                    السؤال التالي <i class="fas fa-arrow-left mr-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Controls -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div class="flex flex-wrap justify-center gap-4">
+                <button class="game-button bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full font-bold" onclick="startNewGame()">
+                    <i class="fas fa-play mr-2"></i>لعبة جديدة
+                </button>
+                <button class="game-button bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-full font-bold" onclick="toggleSound()">
+                    <i class="fas fa-volume-up mr-2" id="soundIcon"></i>الصوت
+                </button>
+                <button class="game-button bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-full font-bold" onclick="showHelp()">
+                    <i class="fas fa-question-circle mr-2"></i>المساعدة
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+                <div class="text-3xl mb-2">🏆</div>
+                <h3 class="text-xl font-bold text-gray-800">أعلى نقاط</h3>
+                <p class="text-2xl font-bold text-blue-600" id="highScore">0</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+                <div class="text-3xl mb-2">✅</div>
+                <h3 class="text-xl font-bold text-gray-800">إجابات صحيحة</h3>
+                <p class="text-2xl font-bold text-green-600" id="correctAnswers">0</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+                <div class="text-3xl mb-2">🎯</div>
+                <h3 class="text-xl font-bold text-gray-800">نسبة النجاح</h3>
+                <p class="text-2xl font-bold text-purple-600" id="successRate">0%</p>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+            <div class="bg-white rounded-2xl p-8 max-w-md mx-4">
+                <h3 class="text-2xl font-bold text-center mb-4">كيف تلعب؟</h3>
+                <div class="space-y-4 text-right">
+                    <div class="flex items-center">
+                        <span class="text-2xl ml-3">👀</span>
+                        <p>انظر إلى الحرف المعروض</p>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-2xl ml-3">👆</span>
+                        <p>اختر الحرف الصحيح من الخيارات</p>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-2xl ml-3">⭐</span>
+                        <p>احصل على نقاط مع كل إجابة صحيحة</p>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-2xl ml-3">🎯</span>
+                        <p>حاول الوصول لأعلى نقاط ممكنة</p>
+                    </div>
+                </div>
+                <button class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-full font-bold mt-6" onclick="closeHelp()">
+                    فهمت!
+                </button>
+            </div>
+        </div>
+
+        <!-- Celebration Animation -->
+        <div id="celebrationContainer" class="fixed inset-0 pointer-events-none z-40" style="display: none;">
+            <div class="absolute top-10 left-10 text-4xl star">⭐</div>
+            <div class="absolute top-20 right-20 text-4xl star">🌟</div>
+            <div class="absolute bottom-20 left-20 text-4xl star">✨</div>
+            <div class="absolute bottom-10 right-10 text-4xl star">💫</div>
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl celebration">🎉</div>
+        </div>
+    </div>
+
+    <script>
+        // Game Data
+        const arabicLetters = [
+            {letter: 'أ', name: 'أَلِف', sound: 'alif'},
+            {letter: 'ب', name: 'بَاء', sound: 'ba'},
+            {letter: 'ت', name: 'تَاء', sound: 'ta'},
+            {letter: 'ث', name: 'ثَاء', sound: 'tha'},
+            {letter: 'ج', name: 'جِيم', sound: 'jeem'},
+            {letter: 'ح', name: 'حَاء', sound: 'ha'},
+            {letter: 'خ', name: 'خَاء', sound: 'kha'},
+            {letter: 'د', name: 'دَال', sound: 'dal'},
+            {letter: 'ذ', name: 'ذَال', sound: 'thal'},
+            {letter: 'ر', name: 'رَاء', sound: 'ra'},
+            {letter: 'ز', name: 'زَاي', sound: 'zay'},
+            {letter: 'س', name: 'سِين', sound: 'seen'},
+            {letter: 'ش', name: 'شِين', sound: 'sheen'},
+            {letter: 'ص', name: 'صَاد', sound: 'sad'},
+            {letter: 'ض', name: 'ضَاد', sound: 'dad'},
+            {letter: 'ط', name: 'طَاء', sound: 'ta'},
+            {letter: 'ظ', name: 'ظَاء', sound: 'za'},
+            {letter: 'ع', name: 'عَين', sound: 'ain'},
+            {letter: 'غ', name: 'غَين', sound: 'ghain'},
+            {letter: 'ف', name: 'فَاء', sound: 'fa'},
+            {letter: 'ق', name: 'قَاف', sound: 'qaf'},
+            {letter: 'ك', name: 'كَاف', sound: 'kaf'},
+            {letter: 'ل', name: 'لاَم', sound: 'lam'},
+            {letter: 'م', name: 'مِيم', sound: 'meem'},
+            {letter: 'ن', name: 'نُون', sound: 'noon'},
+            {letter: 'ه', name: 'هَاء', sound: 'ha'},
+            {letter: 'و', name: 'وَاو', sound: 'waw'},
+            {letter: 'ي', name: 'يَاء', sound: 'ya'}
+        ];
+
+        // Game State
+        let currentScore = 0;
+        let currentLevel = 1;
+        let currentQuestionIndex = 0;
+        let totalQuestions = 10;
+        let correctAnswersCount = 0;
+        let currentTargetLetter = null;
+        let gameOptions = [];
+        let soundEnabled = true;
+        let highScore = localStorage.getItem('letterGameHighScore') || 0;
+
+        // Initialize Game
+        function initGame() {
+            document.getElementById('highScore').textContent = highScore;
+            startNewGame();
+        }
+
+        // Start New Game
+        function startNewGame() {
+            currentScore = 0;
+            currentLevel = 1;
+            currentQuestionIndex = 0;
+            correctAnswersCount = 0;
+            updateUI();
+            generateQuestion();
+        }
+
+        // Generate Question
+        function generateQuestion() {
+            if (currentQuestionIndex >= totalQuestions) {
+                endGame();
+                return;
+            }
+
+            // Hide feedback section
+            document.getElementById('feedbackSection').style.display = 'none';
+
+            // Select random target letter
+            currentTargetLetter = arabicLetters[Math.floor(Math.random() * arabicLetters.length)];
+            
+            // Display target letter
+            document.getElementById('targetLetter').textContent = currentTargetLetter.letter;
+            document.getElementById('letterName').textContent = currentTargetLetter.name;
+
+            // Generate options (3 wrong + 1 correct)
+            gameOptions = [currentTargetLetter];
+            while (gameOptions.length < 4) {
+                const randomLetter = arabicLetters[Math.floor(Math.random() * arabicLetters.length)];
+                if (!gameOptions.includes(randomLetter)) {
+                    gameOptions.push(randomLetter);
+                }
+            }
+
+            // Shuffle options
+            gameOptions = gameOptions.sort(() => Math.random() - 0.5);
+
+            // Display options
+            displayOptions();
+            updateProgress();
+        }
+
+        // Display Options
+        function displayOptions() {
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            gameOptions.forEach((option, index) => {
+                const optionCard = document.createElement('div');
+                optionCard.className = 'letter-card bg-gradient-to-br from-blue-400 to-blue-600 text-white p-8 rounded-2xl text-center shadow-lg';
+                optionCard.innerHTML = `
+                    <div class="text-4xl font-bold mb-2">${option.letter}</div>
+                    <div class="text-sm">${option.name}</div>
+                `;
+                optionCard.onclick = () => selectOption(option, optionCard);
+                container.appendChild(optionCard);
+            });
+        }
+
+        // Select Option
+        function selectOption(selectedOption, cardElement) {
+            const isCorrect = selectedOption.letter === currentTargetLetter.letter;
+            
+            // Disable all cards
+            const allCards = document.querySelectorAll('.letter-card');
+            allCards.forEach(card => {
+                card.onclick = null;
+                card.style.pointerEvents = 'none';
+            });
+
+            if (isCorrect) {
+                cardElement.classList.add('correct');
+                currentScore += 10;
+                correctAnswersCount++;
+                showFeedback(true);
+                if (soundEnabled) playSuccessSound();
+                showCelebration();
+            } else {
+                cardElement.classList.add('wrong');
+                showFeedback(false);
+                if (soundEnabled) playErrorSound();
+                
+                // Highlight correct answer
+                allCards.forEach(card => {
+                    if (card.textContent.includes(currentTargetLetter.letter)) {
+                        card.classList.add('correct');
+                    }
+                });
+            }
+
+            currentQuestionIndex++;
+            updateUI();
+        }
+
+        // Show Feedback
+        function showFeedback(isCorrect) {
+            const feedbackSection = document.getElementById('feedbackSection');
+            const feedbackEmoji = document.getElementById('feedbackEmoji');
+            const feedbackText = document.getElementById('feedbackText');
+            const feedbackMessage = document.getElementById('feedbackMessage');
+
+            if (isCorrect) {
+                feedbackEmoji.textContent = '🎉';
+                feedbackText.textContent = 'أحسنت!';
+                feedbackMessage.textContent = 'إجابة صحيحة! استمر هكذا!';
+            } else {
+                feedbackEmoji.textContent = '😔';
+                feedbackText.textContent = 'حاول مرة أخرى!';
+                feedbackMessage.textContent = `الإجابة الصحيحة هي: ${currentTargetLetter.letter} (${currentTargetLetter.name})`;
+            }
+
+            feedbackSection.style.display = 'block';
+        }
+
+        // Next Question
+        function nextQuestion() {
+            // Reset card styles
+            const allCards = document.querySelectorAll('.letter-card');
+            allCards.forEach(card => {
+                card.classList.remove('correct', 'wrong');
+                card.style.pointerEvents = 'auto';
+            });
+
+            generateQuestion();
+        }
+
+        // End Game
+        function endGame() {
+            const successRate = Math.round((correctAnswersCount / totalQuestions) * 100);
+            
+            if (currentScore > highScore) {
+                highScore = currentScore;
+                localStorage.setItem('letterGameHighScore', highScore);
+                document.getElementById('highScore').textContent = highScore;
+            }
+
+            const feedbackSection = document.getElementById('feedbackSection');
+            const feedbackEmoji = document.getElementById('feedbackEmoji');
+            const feedbackText = document.getElementById('feedbackText');
+            const feedbackMessage = document.getElementById('feedbackMessage');
+
+            feedbackEmoji.textContent = '🏆';
+            feedbackText.textContent = 'انتهت اللعبة!';
+            feedbackMessage.innerHTML = `
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <p class="font-bold text-blue-800">نتائجك:</p>
+                    <p>النقاط: ${currentScore}</p>
+                    <p>الإجابات الصحيحة: ${correctAnswersCount} من ${totalQuestions}</p>
+                    <p>نسبة النجاح: ${successRate}%</p>
+                </div>
+            `;
+
+            document.querySelector('#feedbackSection button').textContent = 'لعبة جديدة';
+            document.querySelector('#feedbackSection button').onclick = startNewGame;
+            
+            feedbackSection.style.display = 'block';
+            showCelebration();
+        }
+
+        // Update UI
+        function updateUI() {
+            document.getElementById('score').textContent = currentScore;
+            document.getElementById('level').textContent = Math.floor(currentScore / 50) + 1;
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            document.getElementById('correctAnswers').textContent = correctAnswersCount;
+            
+            const successRate = currentQuestionIndex > 0 ? Math.round((correctAnswersCount / currentQuestionIndex) * 100) : 0;
+            document.getElementById('successRate').textContent = successRate + '%';
+        }
+
+        // Update Progress
+        function updateProgress() {
+            const progress = (currentQuestionIndex / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // Show Celebration
+        function showCelebration() {
+            const celebration = document.getElementById('celebrationContainer');
+            celebration.style.display = 'block';
+            setTimeout(() => {
+                celebration.style.display = 'none';
+            }, 2000);
+        }
+
+        // Toggle Sound
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            icon.className = soundEnabled ? 'fas fa-volume-up mr-2' : 'fas fa-volume-mute mr-2';
+        }
+
+        // Show Help
+        function showHelp() {
+            document.getElementById('helpModal').style.display = 'flex';
+        }
+
+        // Close Help
+        function closeHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        // Sound Effects (Simple beep sounds using Web Audio API)
+        function playSuccessSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+            oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+            oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        function playErrorSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(150, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        }
+
+        // Initialize game when page loads
+        window.onload = initGame;
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9699d6e5a0b752c7',t:'MTc1NDI2NjMwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
